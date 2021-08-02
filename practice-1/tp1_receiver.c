@@ -11,8 +11,9 @@ void usr1_handler(int num) {
 void usr2_handler(int num) {
     write(STDOUT_FILENO, "Signal USR2 Received\n", 22);
 }
-void term_handler(int num) {
+void int_handler(int num) {
     write(STDOUT_FILENO, "Signal TERM Received\n", 22);
+    kill(getpid(), SIGTERM);
 }
 
 int main(int argc, char *argv[]) {
@@ -20,7 +21,7 @@ int main(int argc, char *argv[]) {
     // Declaring signals to be waiting for and respective handler functions
     signal(SIGUSR1, usr1_handler);
     signal(SIGUSR2, usr2_handler);
-    signal(SIGTERM, term_handler);
+    signal(SIGINT, int_handler);
 
     // Transforming int pid to string pid (spid)
     int pid = getpid();

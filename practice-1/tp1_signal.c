@@ -30,17 +30,18 @@ int main(int argc, char *argv[]){
     if (check_process(pid)) {
 
         if (strcmp ("SIGUSR1", argv[2]) == 0) {
+            printf("SIGUSR2 SENT\n");
             kill(pid, SIGUSR1);
         }
 
         if (strcmp ("SIGUSR2", argv[2]) == 0) {
-            printf("SIGUSR2 SENT");
+            printf("SIGUSR2 SENT\n");
             kill(pid, SIGUSR2);
         }
 
         if (strcmp ("SIGTERM", argv[2]) == 0) {
-            printf("SIGTERM SENT");
-            kill(pid, SIGTERM);
+            printf("SIGTERM SENT\n");
+            kill(pid, SIGINT);
         }
         
     }
