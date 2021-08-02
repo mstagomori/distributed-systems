@@ -101,19 +101,19 @@ main(void) {
             // Receives client message
             int message_len;
             if((message_len = recv(clientfd, buffer, BUFFER_LENGTH, 0)) > 0) {
-                buffer[message_len - 1] = '\0';
 
                 // Transforms string to integer
                 int number = atoi(buffer);
                 
                 // Print if it's prime or not
                 if (IsPrime(number)) {
-                    printf("%d is PRIME\n", number);
+                    if(strcmp(buffer, "bye") == 1) {
+                        printf("%d is PRIME\n", number);
+                    }
                 } else {
                     printf("%d is NOT PRIME\n", number);
                 }
             }
-
 
             // 'bye' message finishes the connection
             if(strcmp(buffer, "bye") == 0) {

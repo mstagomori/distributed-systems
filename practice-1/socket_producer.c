@@ -115,6 +115,19 @@ int main(int argc, char *argv[]) {
         printf("Server answer: %s\n", buffer_in);
     }
 
+    // Zeroing the buffers 
+    memset(buffer_in, 0x0, LEN);
+    memset(buffer_out, 0x0, LEN);
+
+    char final_message[20] = "bye";
+
+    // Sends the read message to the server through the socket 
+    send(sockfd, final_message, strlen(final_message), 0);
+
+    // Receives an answer from the server 
+    slen = recv(sockfd, buffer_in, LEN, 0);
+    printf("Server answer: %s\n", buffer_in);
+
     // Close the connection whith the server 
     close(sockfd);
 
