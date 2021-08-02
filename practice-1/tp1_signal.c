@@ -34,13 +34,13 @@ int main(int argc, char *argv[]){
         }
 
         if (strcmp ("SIGUSR2", argv[2]) == 0) {
-            printf("SIGUSR1 SENT");
+            printf("SIGUSR2 SENT");
             kill(pid, SIGUSR2);
         }
 
         if (strcmp ("SIGTERM", argv[2]) == 0) {
-            printf("SIGUSR1 SENT");
-            kill(pid, SIGINT);
+            printf("SIGTERM SENT");
+            kill(pid, SIGTERM);
         }
         
     }
