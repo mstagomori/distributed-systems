@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <ctime>
 #include <math.h>
+#include <string.h>
+#include <sstream>
 
 using namespace std;
 
@@ -39,6 +41,10 @@ int main(int argc, char const *argv[])
 {
     int fd[2];
 
+    int QTD_DE_NUM = stoi(argv[1]);
+
+    char input_str[100];
+
     pid_t p;
 
     if(pipe(fd)==-1){
@@ -54,21 +60,36 @@ int main(int argc, char const *argv[])
     }
 
     //Parent Process
+    // Produtor
     if (p>0){
-        cout<<"Parent"<< " "<< p<<"\n";
+        close(fd[0]);
+        char num[20];
+        int incrementalNumber = 1;
+        for (int i =0; i< QTD_DE_NUM; i++){
+            sprintf(num, "%d", incrementalNumber);
+            write(fd[1], num, 50);
+            incrementalNumber = incrementByDelta(incrementalNumber);
+        }
+        sprintf(num, "%d", 0);
+        write(fd[1], num, 20);
+        close(fd[1]);
+        exit(EXIT_SUCCESS);
     }
     //Child Process
     else{
-        cout<<"Child"<< " "<< p;
+        char readNumber[20];
+        int intReadNumber = 0;
+        close(fd[1]);
+        for (int i = 0; i < QTD_DE_NUM + 1; i++)
+        {
+            read(fd[0], readNumber, 50);
+            intReadNumber = stoi(readNumber);
+            if (isPrimeNumber(intReadNumber) && intReadNumber != 0)
+                cout << readNumber << "\n";
+            if(intReadNumber == 0) break;
+        }
+        close(fd[0]);
+        exit(EXIT_SUCCESS);
     }
-    int incrementalNumber = 1;
-    //for (int i = 0; i < 100; i++)
-    //{
-        //incrementalNumber = incrementByDelta(incrementalNumber);
-        //if (isPrimeNumber(incrementalNumber))
-        //{
-            //cout << incrementalNumber << "\n";
-        //}
-    //}
     return 0;
 }
