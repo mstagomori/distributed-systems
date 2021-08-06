@@ -50,6 +50,8 @@ int main(int argc, char const *argv[])
 		//Variável que pega o argumento passado ao sistema como parametro da quantidade de numeros a serem incrementados
     int QTD_DE_NUM = stoi(argv[1]);
 
+    char input_str[100];
+
 		//variavel para identificação de processo
     pid_t p;
 
