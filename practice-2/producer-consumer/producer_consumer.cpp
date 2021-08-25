@@ -7,6 +7,8 @@
 #include<mutex>
 #include<condition_variable>
 
+using namespace std::chrono;
+
 //Função para gerar um numero aleatório
 int getRandomNumber();
 //Função para verificar se um número é primo
@@ -17,18 +19,17 @@ void insertRandomNumberIntoArray(int[]);
 class Semaphore
 {
 public:
-  Semaphore(int count_ = 0)
-      : count(count_)
+  Semaphore(int count_ = 0) : count(count_)
   {
   }
 
-  inline void notify()
+  void notify()
   {
     std::unique_lock<std::mutex> lock(mtx);
     count++;
     cv.notify_one();
   }
-  inline void wait()
+  void wait()
   {
     std::unique_lock<std::mutex> lock(mtx);
     while (count == 0)
@@ -42,10 +43,10 @@ private:
   int count;
 };
 
-class MutexCounter
+class Counter
 {
 public:
-  MutexCounter()
+  Counter()
   {
     this->counter = 0;
   }
@@ -58,14 +59,14 @@ public:
     return val;
   }
 
-  void incrementCount()
+  void increment()
   {
     mutex.lock();
     this->counter++;
     mutex.unlock();
   }
 
-  void decrementCount()
+  void decrement()
   {
     mutex.lock();
     this->counter--;
@@ -78,63 +79,75 @@ private:
 };
 
 int main(){
-    srand (time(NULL));
+    int combinacoes[][2] = {{1,1},{1,2},{1,4},{1,8},{1,16},{2,1},{4,1},{8,1},{16,1}}; 
+    int valoresN[] = {1,2,4,16,32};
+    for(int i =0; i< sizeof(combinacoes)/sizeof(combinacoes[0]); i++ ){
+        std::cout<<"Para combinação {Np , Nc} = {"<< combinacoes[i][0]<<" , "<<combinacoes[i][1]<<"}"<<std::endl;
+        for(int j =0; j<sizeof(valoresN)/sizeof(valoresN[0]); j++){
+            auto start = high_resolution_clock::now();
 
-    int Np;
-    int Nc;
-    int M =(int)10e5;
-    int M = 10;
-    int N = 10;
+            srand (time(NULL));
 
-    MutexCounter producerCounter;
-    MutexCounter consumerCounter;
+            int Nc = combinacoes[i][0];
+            int Np = combinacoes[i][1];
+            int M =(int)10e5;
+            int N = valoresN[j];
 
-    std::vector<std::thread> producers;
-    std::vector<std::thread> consumers;
+            Counter producerCounter;
+            Counter consumerCounter;
 
-    std::vector<int> memory;
+            std::vector<std::thread> producers;
+            std::vector<std::thread> consumers;
 
-    Semaphore mutex(1);
-    Semaphore empty(N);
-    Semaphore full(0);
-    for (int i = 0; i < 2; i++)
-    {
-        producers.push_back(std::thread([&]()
-        {
-            while (producerCounter.getCount() < M)
+            std::vector<int> memory;
+
+            Semaphore mutex(1);
+            Semaphore empty(N);
+            Semaphore full(0);
+            for (int i = 0; i < Np; i++)
             {
-                producerCounter.incrementCount();
-                empty.wait();
-                mutex.wait();
-                memory.push_back(getRandomNumber());
-                mutex.notify();
-                full.notify();
+                producers.push_back(std::thread([&]()
+                {
+                    while (producerCounter.getCount() < M)
+                    {
+                        producerCounter.increment();
+                        empty.wait();
+                        mutex.wait();
+                        memory.push_back(getRandomNumber());
+                        mutex.notify();
+                        full.notify();
+                    }
+                }));
             }
-        }));
-    }
 
-    for (int i = 0; i < 2; i++)
-    {
-        consumers.push_back(std::thread([&]()
-        {
-            while (consumerCounter.getCount() < M)
+            for (int i = 0; i < Nc; i++)
             {
-                consumerCounter.incrementCount();
-                full.wait();
-                mutex.wait();
-                int singlePrime = memory.back();
-                memory.pop_back();
-                mutex.notify();
-                empty.notify();
-                std::cout << singlePrime << " is prime: "<<isPrimeNumber(singlePrime)<<std::endl;
+                consumers.push_back(std::thread([&]()
+                {
+                    while (consumerCounter.getCount() < M)
+                    {
+                        consumerCounter.increment();
+                        full.wait();
+                        mutex.wait();
+                        int num = memory.back();
+                        memory.pop_back();
+                        mutex.notify();
+                        empty.notify();
+                        //std::cout << num << " is prime: "<<isPrimeNumber(num)<<std::endl;
+                    }
+                }));
             }
-        }));
-    }
 
-    for (int i = 0; i < 2; i++)
-        producers[i].join();
-    for (int i = 0; i < 2; i++)
-        consumers[i].join();
+            for (int i = 0; i < Np; i++)
+                producers[i].join();
+            for (int i = 0; i < Nc; i++)
+                consumers[i].join();
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<seconds>(stop - start);
+            std::cout<< " N = "<< valoresN[j] << " => " <<  duration.count() << " " ;
+        }
+        std::cout<<std::endl;
+    }
     return 0;
 }
 
