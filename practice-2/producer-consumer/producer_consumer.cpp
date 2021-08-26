@@ -23,7 +23,7 @@ public:
   {
   }
 
-  void pickLock()
+  void notify()
   {
     std::unique_lock<std::mutex> lock(mtx);
     count++;
@@ -63,13 +63,6 @@ public:
   {
     mutex.lock();
     this->counter++;
-    mutex.unlock();
-  }
-
-  void decrement()
-  {
-    mutex.lock();
-    this->counter--;
     mutex.unlock();
   }
 
@@ -114,8 +107,8 @@ int main(){
                         empty.wait();
                         mutex.wait();
                         memory.push_back(getRandomNumber());
-                        mutex.pickLock();
-                        full.pickLock();
+                        mutex.notify();
+                        full.notify();
                     }
                 }));
             }
@@ -131,8 +124,8 @@ int main(){
                         mutex.wait();
                         int num = memory.back();
                         memory.pop_back();
-                        mutex.pickLock();
-                        empty.pickLock();
+                        mutex.notify();
+                        empty.notify();
                         //std::cout << num << " is prime: "<<isPrimeNumber(num)<<std::endl;
                     }
                 }));
