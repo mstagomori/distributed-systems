@@ -58,6 +58,10 @@ int main(int argc, char **argv)
         }
         if (pid[i] == 0)
         {
+            //Faz conexão pelo socket
+            //request da permissão
+            //escrever no arquivo
+            //Enviar o release
         }
     }
 
