@@ -4,6 +4,5 @@ WORKDIR /coordinator
 
 COPY . /coordinator
 
-RUN g++ -o myapp coordinator.cpp
+RUN g++ -pthread -o myapp coordinator.cpp
 
-CMD ["./myapp"]
