@@ -17,6 +17,14 @@
 #define PORT 8080
 #define MAXLINE 1024
 
+std::mutex mtx;
+
+struct request {
+    int proces_id;
+    int file_descriptor;
+    int request_type;
+};
+
 // Driver code
 int main()
 {
@@ -24,6 +32,8 @@ int main()
     int sockfd;
     char buffer[MAXLINE];
     struct sockaddr_in servaddr, cliaddr;
+    mtx message_queue_mutex, queue_mutex;
+    std::deque<request> queue, message_queue;
 
     threads.push_back(
         std::thread([&]()
@@ -168,17 +178,22 @@ int main()
                                     //Echo back the message that came in
                                     else
                                     {
-                                        //set the string terminating NULL byte on the end
-                                        //of the data read
-                                        buffer[valread] = '\0';
-                                        send(sd, buffer, strlen(buffer), 0);
+                                        //AQUI IRÁ PEGAR A REQUEST E COLOCAR NA QUEUE
+                                        //DE REQUISIÇÔES
+                                        message request_message = parse_message(sd);
+                                        message_queue_mutex.lock();
+                                        message_queue.push_back(request_messate);
+                                        message_queue_mutex.unlock();
                                     }
                                 }
                             }
                         }
-
                         return 0;
                     }));
+    //Mutex
+    threads.push_back( [&] () {
+        
+    })
     for (int i = 0; i < threads.size(); i++)
     {
         threads[i].join()
