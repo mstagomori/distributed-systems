@@ -9,6 +9,8 @@
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <queue>
+#include <mutex>
 
 #define MESSAGE_SIZE 10
 #define MAX_CLIENTS 128
@@ -17,24 +19,33 @@
 #define PORT 8080
 #define MAXLINE 1024
 
-std::mutex mtx;
+#define REQUEST_MESSAGE 1
+#define RELEASE_MESSAGE 3
 
-struct request {
+struct message
+{
     int proces_id;
     int file_descriptor;
-    int request_type;
+    int message_type;
 };
+
+struct message parse_message(int fd)
+{
+    message temp_message;
+    return temp_message;
+}
 
 // Driver code
 int main()
 {
+    std::map counter<int, int>;
     std::vector<std::thread> threads;
     int sockfd;
     char buffer[MAXLINE];
     struct sockaddr_in servaddr, cliaddr;
-    mtx message_queue_mutex, queue_mutex;
-    std::deque<request> queue, message_queue;
-
+    std::mutex message_queue_mutex, queue_mutex;
+    std::deque<message> queue, message_queue;
+    bool run_coordinator = true;
     threads.push_back(
         std::thread([&]()
                     {
@@ -180,9 +191,9 @@ int main()
                                     {
                                         //AQUI IRÁ PEGAR A REQUEST E COLOCAR NA QUEUE
                                         //DE REQUISIÇÔES
-                                        message request_message = parse_message(sd);
+                                        message message = parse_message(sd);
                                         message_queue_mutex.lock();
-                                        message_queue.push_back(request_messate);
+                                        message_queue.push_back(message);
                                         message_queue_mutex.unlock();
                                     }
                                 }
@@ -191,12 +202,105 @@ int main()
                         return 0;
                     }));
     //Mutex
-    threads.push_back( [&] () {
-        
-    })
+    threads.push_back(std::thread([&]()
+                                  {
+                                      bool process, free = true, processQueue;
+                                      message message_popped;
+
+                                      while (run_coordinator)
+                                      {
+                                          message_queue_mutex.lock();
+                                          if (!message_queue.empty())
+                                          {
+                                              process = true;
+                                              message_popped = message_queue.front();
+                                              message_queue.pop_front();
+                                          }
+                                          message_queue_mutex.unlock();
+
+                                          if (process)
+                                          {
+                                              switch (message_popped.message_type)
+                                              {
+                                              case REQUEST_MESSAGE: //request
+                                                  queue_mutex.lock();
+                                                  queue.push_back(message_popped);
+                                                  queue_mutex.unlock();
+                                                  break;
+                                              case RELEASE_MESSAGE: //release
+                                                  free = true;
+                                                  break;
+                                              default:
+                                                  break;
+                                              }
+                                              process = false;
+                                          }
+
+                                          if (free)
+                                          {
+                                              queue_mutex.lock();
+                                              if (queue.size() > 0)
+                                              {
+                                                  message_popped = queue.front();
+                                                  queue.pop_front();
+                                                  processQueue = true;
+                                              }
+                                              queue_mutex.unlock();
+                                              if (processQueue)
+                                              {
+                                                  char grant[MESSAGE_SIZE + 1];
+                                                  getGrant(grant);
+                                                  send(message_popped.file_descriptor, grant, MESSAGE_SIZE + 1, 0);
+                                                  counter[msg.id]++;
+                                                  free = false;
+                                                  processQueue = false;
+                                              }
+                                          }
+                                      }
+                                  }));
+
+    threads.push_back(std::thread([&]()
+                                  {
+                                      std::string strCommand;
+                                      std::cout << "" << std::endl;
+                                      while (run_coordinator)
+                                      {
+                                          std::cout << "> ";
+                                          getline(std::cin, strCommand);
+                                          switch (resolveCommand(strCommand))
+                                          {
+                                          case command_print_queue:
+                                              std::cout << "Fila de pedidos:" << std::endl;
+                                              queueMutex.lock();
+                                              if (queue.size() == 0)
+                                                  std::cout << "vazia." << std::endl;
+                                              else
+                                                  for (int i = 0; i < queue.size(); i++)
+                                                      std::cout << "  - " << i + 1 << "º: " << queue[i].id << std::endl;
+                                              queueMutex.unlock();
+                                              break;
+
+                                          case command_print_history:
+                                              std::cout << "Histórico de pedidos atendidos:" << std::endl;
+                                              for (key_iterator s = counter.begin(); s != counter.end(); ++s)
+                                                  std::cout << "  - Processo " << *s << ": " << counter[*s] << " vezes." << std::endl;
+                                              break;
+
+                                          case command_quit:
+                                              std::cout << "Encerrando programa..." << std::endl;
+                                              running = false;
+                                              break;
+
+                                          default:
+                                              std::cout << "Comando \"" << strCommand << "\" inválido!" << std::endl;
+                                              break;
+                                          }
+                                      }
+                                      return 0;
+                                  }));
     for (int i = 0; i < threads.size(); i++)
     {
-        threads[i].join()
+        threads[i].join();
     }
     return 0;
 }
